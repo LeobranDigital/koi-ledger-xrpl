@@ -41,9 +41,6 @@ All critical events are anchored on the XRP Ledger to ensure:
 A trusted digital ecosystem that protects the global Nishikigoi industry from fraud and misinformation.
 
 
-
-Here’s a **fully merged, GitHub-ready `README.md`** for KOI LEDGER, combining your old readme, updated Phase-2 alignment, MVP, database schema, XRPL structure, and technology stack. This is polished, professional, and ready to post:
-
 ---
 
 ## Core MVP Features
@@ -131,21 +128,6 @@ Every key event stores minimal, verifiable metadata in the XRPL **Memo field**:
 * **QR / Tagging:** Optional per-Koi QR codes for tank or breeding verification
 * **Hosting:** Local VM or cloud instance for PoC demonstration
 
----
-
-## Notes on MVP Scope for Phase 2
-
-* Demonstrate **2–3 sample Koi** with registration, transfer, verification, and health record update.
-* Show **ledger integration clearly** in demo video.
-* Stretch features (full breeder network, e-commerce, medicine tracking) can be added post-competition.
-
----
-
-## Mentors Alignment & Phase-2 Plan
-
-* **Mentor alignment date:** 5 February 2026
-* **MVP submission date:** 13 February 2026
-* **Phase-2 goal:** Demonstrate proof-of-concept blockchain verification and digital passport flow for judges.
 
 ---
 
