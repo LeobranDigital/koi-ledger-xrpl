@@ -33,6 +33,12 @@ nav a {
     font-weight: bold;
 }
 
+.lang-select {
+    margin-left: 20px;
+    padding: 6px;
+    border-radius: 6px;
+}
+
 .hero {
     display: flex;
     padding: 60px;
@@ -41,16 +47,12 @@ nav a {
 }
 
 .hero-text {
-    max-width: 500px;
+    max-width: 520px;
 }
 
 .hero-text h1 {
     font-size: 42px;
     color: #ff3b3b;
-}
-
-.hero-text p {
-    font-size: 18px;
 }
 
 .btn {
@@ -70,6 +72,7 @@ nav a {
     display: flex;
     justify-content: center;
     gap: 20px;
+    flex-wrap: wrap;
 }
 
 .card {
@@ -79,97 +82,148 @@ nav a {
     width: 260px;
 }
 
-img {
-    border-radius: 15px;
-}
-
 footer {
     background: #020617;
     padding: 30px;
     text-align: center;
 }
+
+.hidden {
+    display: none;
+}
+
+img {
+    border-radius: 15px;
+}
 </style>
+
+<script>
+function setLanguage(lang) {
+
+    let en = document.getElementsByClassName("en");
+    let jp = document.getElementsByClassName("jp");
+
+    if(lang === "jp") {
+        for(let i=0;i<en.length;i++) en[i].classList.add("hidden");
+        for(let i=0;i<jp.length;i++) jp[i].classList.remove("hidden");
+    } else {
+        for(let i=0;i<jp.length;i++) jp[i].classList.add("hidden");
+        for(let i=0;i<en.length;i++) en[i].classList.remove("hidden");
+    }
+}
+</script>
 
 </head>
 
-<body>
+<body onload="setLanguage('en')">
 
 <header>
 <div class="logo">KOI LEDGER</div>
+
 <nav>
 <a href="#about">About</a>
 <a href="#features">Features</a>
 <a href="#xrpl">XRPL</a>
 <a href="#contact">Contact</a>
+
+<select class="lang-select" onchange="setLanguage(this.value)">
+<option value="en">English</option>
+<option value="jp">日本語</option>
+</select>
+
 </nav>
 </header>
 
-<section class="hero">
-<div class="hero-text">
-<h1>KOI LEDGER</h1>
-<h3>Digital Passport for Premium Koi (Nishikigoi) on XRPL</h3>
 
-<p>
+<section class="hero">
+
+<div class="hero-text">
+
+<h1>KOI LEDGER</h1>
+
+<h3 class="en">Digital Passport for Premium Koi (Nishikigoi) on XRPL</h3>
+<h3 class="jp hidden">XRPL上の高級錦鯉向けデジタルパスポート</h3>
+
+<p class="en">
 A blockchain-powered system to verify koi lineage, ownership,
 health records, and authenticity using the XRP Ledger.
 </p>
 
+<p class="jp hidden">
+KOI Ledgerは、錦鯉の血統・所有権・健康履歴・真正性を
+XRP Ledgerで安全に記録・検証するブロックチェーン基盤のデジタルパスポートです。
+</p>
+
 <a class="btn" href="#features">Explore Features</a>
+
 </div>
 
 <div>
 <img src="koi.png" width="420">
 </div>
+
 </section>
 
 
 <section id="about" class="section">
-<h2>Why KOI Ledger?</h2>
 
-<p>
-The Japanese koi industry is built on trust, pedigree, and authenticity.  
-Today most records are paper-based and easily lost or forged.
+<h2 class="en">Why KOI Ledger?</h2>
+<h2 class="jp hidden">なぜ KOI Ledger なのか？</h2>
 
-KOI Ledger creates an immutable, verifiable digital identity  
-for every premium koi fish.
+<p class="en">
+The Japanese koi industry relies on trust and pedigree.
+Most records are paper-based and vulnerable to loss or forgery.
+KOI Ledger creates an immutable digital identity for every premium koi.
 </p>
 
-<img src="koipassport.png" width="800">
+<p class="jp hidden">
+日本の錦鯉産業は「信頼」と「血統」がすべてです。  
+しかし多くの記録は紙ベースで、改ざんや紛失のリスクがあります。  
+KOI Ledgerは、すべての高級錦鯉に改ざん不可能なデジタルIDを提供します。
+</p>
+
+<img src="koipassport.png" width="500">
+
 </section>
 
 
 <section id="features" class="section">
 
-<h2>Core Features</h2>
+<h2 class="en">Core Features</h2>
+<h2 class="jp hidden">主な機能</h2>
 
 <div class="cards">
 
 <div class="card">
-<h3>Digital Passport</h3>
-<p>
-Immutable lineage, breeder details, and photos stored on XRPL
-</p>
+<h3 class="en">Digital Passport</h3>
+<h3 class="jp hidden">デジタルパスポート</h3>
+
+<p class="en">Immutable lineage and breeder records on XRPL</p>
+<p class="jp hidden">XRPL上に記録される改ざん不可能な血統情報</p>
 </div>
 
 <div class="card">
-<h3>Ownership Transfer</h3>
-<p>
-Secure ownership change linked with XRPL payments
-</p>
+<h3 class="en">Ownership Transfer</h3>
+<h3 class="jp hidden">所有権移転</h3>
+
+<p class="en">Secure ownership changes linked with payments</p>
+<p class="jp hidden">支払いと連動した安全な所有権移転</p>
 </div>
 
 <div class="card">
-<h3>Health Records</h3>
-<p>
-Vaccination, growth and treatment logs
-</p>
+<h3 class="en">Health Records</h3>
+<h3 class="jp hidden">健康記録</h3>
+
+<p class="en">Vaccination and treatment history</p>
+<p class="jp hidden">ワクチン・治療履歴の管理</p>
 </div>
 
 <div class="card">
-<h3>QR Verification</h3>
-<p>
-Instant authenticity check for buyers and auctions
-</p>
+<h3 class="en">QR Verification</h3>
+<h3 class="jp hidden">QR検証</h3>
+
+<p class="en">Instant authenticity check for buyers</p>
+<p class="jp hidden">購入者向けの即時真贋確認</p>
 </div>
 
 </div>
@@ -179,30 +233,15 @@ Instant authenticity check for buyers and auctions
 
 <section id="xrpl" class="section">
 
-<h2>Powered by XRP Ledger</h2>
+<h2 class="en">Powered by XRP Ledger</h2>
+<h2 class="jp hidden">XRP Ledger による基盤</h2>
 
-<p>
-KOI Ledger uses XRPL for:
+<p class="en">
+KOI Ledger uses XRPL for secure records and payments in JPY/XRP.
 </p>
 
-<ul style="list-style:none">
-<li>✔ Immutable ownership records</li>
-<li>✔ Fast payments in JPY / XRP</li>
-<li>✔ Low transaction cost</li>
-<li>✔ Global marketplace readiness</li>
-<li>✔ Compliance-friendly audit trail</li>
-</ul>
-
-</section>
-
-
-<section class="section">
-
-<h2>Perfect for Japan’s Nishikigoi Industry</h2>
-
-<p>
-Designed for breeders, dealers, auction houses and global buyers
-to trade premium koi with confidence.
+<p class="jp hidden">
+KOI LedgerはXRPLを活用し、JPY/XRP決済と改ざん不可能な記録を実現します。
 </p>
 
 </section>
@@ -210,14 +249,14 @@ to trade premium koi with confidence.
 
 <footer id="contact">
 
-<h3>Contact & Links</h3>
+<h3>Contact</h3>
 
-<p>Email: info@koiledger.jp</p>
 <p>Email: info@leobran.com</p>
 
-<p>GitHub: github.com/koiledger</p>
+<p>GitHub: https://github.com/LeobranDigital/koi-ledger-xrpl</p>
 
-<p>© 2026 KOI LEDGER – Japan</p>
+<p class="en">© 2026 KOI LEDGER – Japan</p>
+<p class="jp hidden">© 2026 KOI LEDGER – 日本</p>
 
 </footer>
 
