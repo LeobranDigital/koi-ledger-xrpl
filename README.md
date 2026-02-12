@@ -1,136 +1,270 @@
-### Repository Name:   **koi-ledger-xrpl**
----
-**KOI LEDGER – Digital Passport for Premium Nishikigoi on XRPL**
----
-**Goal:** Bring transparency, trust, and auditability to Japan’s premium Koi industry while creating a global standard for digital Koi authentication.
----
-Website:
-https://leobran.com/koiledger/
+# 🐟 KOI LEDGER – Digital Passport for Premium Nishikigoi on XRPL
 
-Koi Ledger is a blockchain-based provenance platform that creates immutable digital identities for high-value Nishikigoi (Japanese Koi).
+![Koi Ledger](Koi.png)
+![Koi Passport](Website%20koiledger/koipassport.png)
 
-The platform records:
+### Repository: **koi-ledger-xrpl**
 
-* Breeder origin
-* Lineage
-* Health history
-* Ownership transfers
-* Auction records
-
-All critical events are anchored on the XRP Ledger to ensure:
-
-* Tamper-proof authenticity
-* Transparent ownership
-* Global verifiability
-
-### Core Users
-
-* Koi breeders
-* Auction houses
-* Collectors
-* Veterinarians
-* Exporters
-
-### Technology Stack
-
-* XRPL for settlement & records
-* Web interface for breeders
-* Mobile viewer for buyers
-* QR/NFC tags for koi tanks
-
-### Outcome
-
-A trusted digital ecosystem that protects the global Nishikigoi industry from fraud and misinformation.
-
+🌐 Website: https://leobran.com/koiledger/
 
 ---
 
-## Core MVP Features
+## 🎯 Mission
 
-**Objective:** Demonstrate full digital passport lifecycle, ownership verification, and health record tracking on XRPL.
+To bring **transparency, trust, and global verifiability** to Japan’s premium Nishikigoi industry by creating immutable digital identities anchored on the **XRP Ledger (XRPL)**.
 
-1. **Dashboard / Home Screen**
-
-   * Lists all registered Koi with thumbnails.
-   * Search by name or Koi ID.
-
-2. **Koi Detail View**
-
-   * Full digital passport: lineage, photo, breeder info, health records.
-   * Displays XRPL transaction hash.
-   * `Verify Ownership` button → confirms ledger authenticity.
-
-3. **Register New Koi**
-
-   * Form input: breeder, lineage, color pattern, and initial owner.
-   * Submission triggers XRPL transaction and stores metadata.
-
-4. **Transfer Ownership**
-
-   * Select a Koi → input new owner → submit.
-   * Updates ownership history with ledger confirmation.
-
-5. **Health Log Update**
-
-   * Add timestamped vaccinations or treatments.
-   * Optional QR code linking to tank/Koi tag.
-
-**Demo Flow:**
-
-1. Register a sample Koi → show XRPL transaction hash.
-2. Transfer ownership → update history.
-3. Verify Koi authenticity → public ledger lookup.
-4. Update health record → audit trail visible.
+Koi Ledger establishes a blockchain-based provenance system that protects breeders, auction houses, and collectors from fraud and misinformation.
 
 ---
 
-## Database Schema (Example)
+## 🌏 The Problem
 
-| Table        | Fields                                                                                       | Description                    |
-| ------------ | -------------------------------------------------------------------------------------------- | ------------------------------ |
-| `koi`        | `koi_id` (PK), `name`, `photo_url`, `breeder_id`, `lineage`, `color_pattern`, `xrpl_tx_hash` | Core Koi record linked to XRPL |
-| `breeder`    | `breeder_id` (PK), `name`, `contact`, `address`                                              | Breeder information            |
-| `ownership`  | `ownership_id` (PK), `koi_id` (FK), `owner_name`, `transfer_date`, `xrpl_tx_hash`            | Ownership history              |
-| `health_log` | `log_id` (PK), `koi_id` (FK), `description`, `timestamp`, `xrpl_tx_hash`                     | Health / treatment records     |
+The global Nishikigoi market handles high-value koi worth thousands to millions of dollars. However:
 
-*All critical events are stored both off-chain (for UI) and on XRPL (for immutable verification).*
+- Ownership history can be unclear
+- Health records can be manipulated
+- Breeder lineage can be falsified
+- Auction transparency is limited
+- International buyers lack trust mechanisms
 
 ---
 
-## XRPL Transaction Structure
+## 💡 The Solution
 
-Every key event stores minimal, verifiable metadata in the XRPL **Memo field**:
+Koi Ledger creates a **tamper-proof digital passport** for each premium koi.
+
+Every critical lifecycle event is:
+- Stored off-chain for UI access
+- Anchored on XRPL for immutable verification
+- Publicly verifiable via transaction hash
+
+---
+
+## 🧬 What Gets Recorded
+
+- 🐣 Breeder origin
+- 🌳 Lineage & bloodline
+- 🏥 Health and vaccination logs
+- 🔄 Ownership transfers
+- 🏷 Auction events
+- 💰 XRP settlement proof
+
+---
+
+## 👥 Core Users
+
+- Koi Breeders
+- Auction Houses
+- Private Collectors
+- Veterinarians
+- Exporters
+- International Buyers
+
+---
+
+## 🚀 Core MVP Features
+
+### 1️⃣ Dashboard
+- Lists all registered Koi
+- Thumbnail preview
+- Search by Name or Koi ID
+
+### 2️⃣ Koi Digital Passport
+- Complete lineage record
+- Health history timeline
+- Ownership audit trail
+- XRPL transaction hash display
+- **Verify Ownership** button (ledger confirmation)
+
+### 3️⃣ Register New Koi
+- Enter breeder + lineage data
+- Assign initial owner
+- Submit → XRPL transaction created
+- Transaction hash stored for verification
+
+### 4️⃣ Transfer Ownership
+- Select Koi
+- Choose new owner
+- Execute XRPL-backed transfer
+- Immutable transfer history recorded
+
+### 5️⃣ Health Log Updates
+- Timestamped treatments or vaccinations
+- Optional QR/NFC integration
+- XRPL memo anchor for audit trail
+
+---
+
+## 🔐 XRPL Integration
+
+Each lifecycle event writes verifiable metadata to the XRPL Memo field.
+
+Example:
 
 ```json
 {
-  "koi_id": "K1234",
-  "event": "REGISTER",      // REGISTER / TRANSFER / HEALTH_UPDATE
-  "details": {
-      "owner": "Taro Yamamoto",
-      "breeder": "Osaka Breeders Association",
-      "lineage": "Sanke",
-      "color_pattern": "White-Red-Black"
-  },
+  "koi_id": "KOI-JPN-01-20260203-0001",
+  "event": "TRANSFER",
+  "owner": "Taro Yamamoto",
   "timestamp": "2026-02-03T12:34:56Z"
 }
-```
+````
 
-* `xrpl_tx_hash` saved in database for verification.
-* Transfer or health update events follow the same structure.
-* Atomic ledger settlement ensures **immutable, auditable history**.
+Stored:
 
----
-
-## Technology Stack
-
-* **Frontend / Demo UI:** Python + PyQt5 (desktop MVP) / React (optional web)
-* **Blockchain Layer:** XRPL Testnet (MVP), Mainnet for production
-* **Database:** SQLite (MVP) / PostgreSQL (production)
-* **Backend / API:** Python Flask or FastAPI for event submission & ledger integration
-* **QR / Tagging:** Optional per-Koi QR codes for tank or breeding verification
-* **Hosting:** Local VM or cloud instance for PoC demonstration
-
+* On-chain → Immutable hash
+* Off-chain → UI-readable metadata
 
 ---
 
-Designed by: LeObran Ltd.
+## 🏗 Technology Stack
+
+### MVP
+
+* Python (Desktop UI)
+* XRPL Testnet
+* SQLite
+* QR Code generation
+
+### Production (Phase 2)
+
+* React Web App
+* FastAPI / Flask Backend
+* PostgreSQL
+* XRPL Mainnet
+* Mobile Verification App
+
+---
+
+## 🗄 Database Overview
+
+| Table               | Purpose             |
+| ------------------- | ------------------- |
+| `koi`               | Core Koi passport   |
+| `breeder`           | Breeder identity    |
+| `ownership`         | Transfer history    |
+| `health_log`        | Medical audit trail |
+| `xrpl_transactions` | On-chain references |
+
+All critical events are dual-recorded:
+
+* Database for performance
+* XRPL for immutability
+
+---
+
+## 🧩 Architecture Overview
+
+See full architecture diagram below in repository documentation.
+
+---
+
+## 🌍 Vision
+
+To establish a **global digital authentication standard** for high-value aquatic livestock, starting with Japan’s premium Nishikigoi industry.
+
+Koi Ledger protects heritage bloodlines, ensures trust in auctions, and creates a new digital infrastructure layer for aquatic asset verification.
+
+---
+
+## 📌 Designed By
+
+**LeObran Ltd.**
+
+Built for innovation. Designed for transparency. Powered by XRPL.
+
+````
+
+---
+
+# ✅ 2️⃣ ARCHITECTURE DIAGRAM (Phase-2 Ready – GitHub Version)
+
+## High-Level System Architecture
+┌──────────────────────────────────────────┐
+│  Breeder / Auction Platform              │
+│  (Web Dashboard / Desktop / Mobile UI)  │
+└───────────────┬──────────────────────────┘
+                │
+                │
+Koi Registration / Transfer / Health Data
+                ▼
+┌──────────────────────────────────────────┐
+│             KOI LEDGER CORE             │
+│                                          │
+│  • Koi Passport Management              │
+│  • Ownership Engine                     │
+│  • Health Record Tracking               │
+│  • XRPL Transaction Builder             │
+│  • QR/NFC Tag Generator                 │
+│  • Compliance & Export Metadata         │
+└───────────────┬──────────────────────────┘
+                │
+                │
+  Hashed / Structured Metadata
+                ▼
+┌──────────────────────────────────────────┐
+│               XRPL LAYER                │
+│                                          │
+│  • Immutable Transaction Records        │
+│  • Memo-Encoded Event Metadata          │
+│  • Atomic XRP Settlement                │
+│  • Public Verification                  │
+└───────────────┬──────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────┐
+│         Buyer Verification App          │
+│                                          │
+│  Scan QR → Fetch TX Hash →              │
+│  Validate on XRPL → Confirm Authenticity│
+└──────────────────────────────────────────┘
+
+
+🔁 Event Lifecycle Flow
+
+1. Register Koi  
+2. XRPL transaction created  
+3. Transaction hash stored in DB  
+4. Ownership transfer occurs  
+5. Health update recorded  
+6. Buyer verifies via QR scan  
+
+Each step leaves a cryptographic audit trail.
+
+
+
+🔐 Security Design
+
+- XRPL provides immutable ledger anchoring
+- Database stores human-readable metadata
+- Transaction hashes ensure tamper detection
+- Dual-layer storage ensures speed + security
+- No private keys stored client-side in production phase
+
+
+
+📈 Phase-2 Enhancements
+
+- NFT-backed Koi identity (XLS-20)
+- On-chain compliance metadata
+- International auction integration
+- Mobile app for global buyers
+- IoT tank integration (water quality logs)
+- API for third-party marketplace integration
+
+
+
+🌏 Long-Term Vision
+
+Koi Ledger becomes the digital trust layer for:
+
+- Premium livestock
+- Aquaculture exports
+- Rare biological assets
+- International breeder certification
+
+
+
+
+Designed by LeObran Ltd.
+Powered by XRPL
