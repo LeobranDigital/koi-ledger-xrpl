@@ -252,12 +252,104 @@ Each step leaves a cryptographic audit trail.
 - IoT tank integration (water quality logs)
 - API for third-party marketplace integration
 
+=====================================================
+🐠 Full Feature List – KoiLedger Desktop & Passport
+=====================================================
+1️⃣ Dashboard
 
+* List all registered Koi
+* Thumbnail preview of Koi photos
+* Search by Name, Koi ID, or Variety
+* Quick access to Passport, Health Log, and Ownership history
+* Filter by breeder, owner, or bloodline
+
+2️⃣ Koi Digital Passport
+
+* Full Koi identification and lineage record
+* Health history timeline with vaccinations and treatments
+* Ownership audit trail with timestamps
+* Display XRPL transaction hashes for verification
+* QR Code encoding **Passport No** and key Koi info
+* Barcode for scanning Passport No
+* Digital Signature of issuing authority
+* MRZ (Machine-Readable Zone) format at bottom
+* Action buttons:
+
+  * Print Passport
+  * Save as PDF
+  * Share Passport (PNG)
+  * Update Photo (file upload / camera capture)
+* Automatic fallback if no photo exists (`No_Koi.png`)
+
+3️⃣ Register New Koi
+
+* Input breeder, bloodline, variety, and Koi name
+* Assign initial owner
+* Optional photo upload
+* Submission → generates XRPL-backed transaction
+* Stores transaction hash and standard Koi ID for verification
+
+4️⃣ Transfer Ownership
+
+* Select Koi from dashboard
+* Choose new owner (fetch name from database)
+* Execute XRPL-backed transfer
+* Immutable ownership history recorded in DB and XRPL
+* Passport updated automatically with new owner and nationality
+
+5️⃣ Health Log Updates
+
+* Add timestamped treatments, vaccinations, or medical notes
+* Optional QR/NFC integration
+* Anchored in XRPL memo for audit trail
+* Visual timeline available on Passport and dashboard
+
+6️⃣ Photo Management
+
+* View current main photo
+* Upload new photo from file
+* Capture directly from camera
+* Preview before saving
+* Automatic database update with timestamp
+* Ensures main photo always visible on Passport
+
+7️⃣ QR & Barcode Integration
+
+* QR code encodes full Koi Passport information (Passport No, Name, Variety, Owner)
+* Barcode represents **Passport No** for scanning
+* Displayed on Passport next to Koi photo
+* Automatic regeneration on Passport updates
+
+8️⃣ XRPL Integration
+
+* All critical events (Registration, Transfer, Health Log) anchored on XRPL
+* Memo field stores structured metadata for public verification
+* Transaction hashes displayed in Passport for auditing
+* Ensures tamper-proof, immutable record
+
+9️⃣ PDF & Printing
+
+* Export Passport to high-resolution PDF
+* Print directly from app
+* Full-color Koi image and QR/Barcode included
+* PDF includes MRZ and digital signature
+
+🔄 Workflow Summary
+
+1. Register Koi → generates Passport & XRPL hash
+2. Add Health Logs → anchored on XRPL
+3. Transfer Ownership → Passport auto-updates
+4. Update Photo → QR & Barcode refresh
+5. Print/Share Passport or Export PDF
+6. Buyers verify via QR scan and XRPL transaction hash
+
+---
 
 🌏 Long-Term Vision
 
 Koi Ledger becomes the digital trust layer for:
-
+- It is SAAS ready, We need to Add Login.
+- Fix Print, Pdf, Share options o capture full page.
 - Premium livestock
 - Aquaculture exports
 - Rare biological assets
