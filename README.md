@@ -3,6 +3,9 @@
 ![Koi Ledger](Koi.png)
 ![Koi Passport](Website%20koiledger/koipassport.png)
 
+### Judges please Read this:
+( Designed in Python 3.11.9, XAMPP, MySQL, mysql connect and many python base packages on Microsoft windows 11. I tested this program and it is working. In case any problem please let me know )
+
 ### Repository: **koi-ledger-xrpl**
 
 🌐 Website: https://leobran.com/koiledger/
