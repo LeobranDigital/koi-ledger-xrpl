@@ -122,14 +122,15 @@ Stored:
 
 ## 🏗 Technology Stack
 
-### MVP
+### MVP (NOW)
 
 * Python (Desktop UI)
 * XRPL Testnet
 * SQLite
 * QR Code generation
+* Many many 35+ features mentioned at the bottom.
 
-### Production (Phase 2)
+### Production (Future)
 
 * React Web App
 * FastAPI / Flask Backend
