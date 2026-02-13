@@ -167,11 +167,15 @@ def open_registration_window(root, prefill_code="", after_register_callback=None
             jpy = float(purchase_entry.get())
             amount_xrp = jpy_to_xrp(jpy)
 
+            memo = f"KOI|REGISTER|{std_id}|Paid {amount_xrp} XRP|{datetime.now().date()}"
+
             tx_hash = send_xrp(
                 from_secret=BUYER_SECRET,
                 to_address=SELLER_ADDRESS,
-                amount_xrp=amount_xrp
+                amount_xrp=amount_xrp,
+                memo_text=memo
             )
+
 
             xrpl_tx_result = tx_hash
             paid_currency = "XRP"

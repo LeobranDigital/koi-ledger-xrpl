@@ -19,6 +19,9 @@ from xrpl.utils import drops_to_xrp
 from threading import Thread
 
 from splash import show_splash
+from owner_manager import OwnerManager
+
+
 show_splash(4000)
 
 BUYER_ADDRESS = "rM3Eq9kfVmEYBWTVZYripuLwkkCdvhH7Zz"
@@ -31,7 +34,6 @@ class KoiLedgerDashboard:
         self.root.title("KOI LEDGER MVP")
         self.root.geometry("1200x750")
         self.root.state('zoomed')  # Fullscreen on Windows
-
 
         # Current Koi being viewed
         self.current_koi_id = None
@@ -57,55 +59,58 @@ class KoiLedgerDashboard:
         img_label.pack(side=tk.RIGHT, padx=20)
 
         # --- Search Frame ---
-        # --- Search Frame ---
         search_frame = tk.Frame(root)
         search_frame.pack(side=tk.TOP, fill=tk.X, pady=10)
 
-        # Left container: Search + Scan QR
-        left_container = tk.Frame(search_frame)
-        left_container.pack(side=tk.LEFT, fill=tk.X, expand=True)  # <-- IMPORTANT: expand=True
-
-        tk.Label(left_container, text="Search Koi ID:").pack(side=tk.LEFT, padx=5)
-        self.search_entry = tk.Entry(left_container, width=30)
+        tk.Label(search_frame, text="Search Koi ID:").pack(side=tk.LEFT, padx=5)
+        self.search_entry = tk.Entry(search_frame, width=30)
         self.search_entry.pack(side=tk.LEFT, padx=5)
-        self.search_btn = tk.Button(left_container, text="Search", command=self.search_koi)
+        self.search_btn = tk.Button(search_frame, text="Search", command=self.search_koi)
         self.search_btn.pack(side=tk.LEFT, padx=5)
-        self.scan_btn = tk.Button(left_container, text="Scan QR", command=self.scan_qr)
+        self.scan_btn = tk.Button(search_frame, text="Scan QR", command=self.scan_qr)
         self.scan_btn.pack(side=tk.LEFT, padx=5)
 
-        # Right container: Action buttons
-        self.action_frame = tk.Frame(search_frame)
-        self.action_frame.pack(side=tk.RIGHT)  # No expand here
+        self.owners_btn = tk.Button(search_frame, text="Owners", command=lambda: OwnerManager(self.root))
+        self.owners_btn.pack(side=tk.LEFT, padx=5)
+
+
+        # --- Action Buttons Frame (below search) ---
+        self.action_frame = tk.Frame(root)
+        self.action_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
 
         self.action_buttons = {}
         btn_names = [
-            "View",
-            "Generate QR",
-            "Transfer",
-            "Ledger",
-            "XRPL Verify",
-            "Export",
-            "Ownership History",
-            "Health Records",
-            "Pedigree",
-            "Certificates"
+            "View", "Generate QR", "Transfer", "Ledger",
+            "XRPL Verify", "Export", "Ownership History",
+            "Health Records", "Pedigree", "Certificates"
         ]
+
+        # All buttons in one row
         for name in btn_names:
-            btn = tk.Button(self.action_frame, text=name, width=15, command=lambda n=name: self.handle_action(n))
-            btn.pack(side=tk.LEFT, padx=2)
+            btn = tk.Button(
+                self.action_frame,
+                text=name,
+                width=15,
+                command=lambda n=name: self.handle_action(n)
+            )
+            btn.pack(side=tk.LEFT, padx=2, pady=2)
+            self.action_buttons[name] = btn
 
-        self.action_frame.pack_forget()  # Hide initially
+        self.action_frame.pack_forget()  # hide initially
 
-
-        # Add after creating self.action_frame
-        self.input_frame = tk.Frame(self.root)
-        self.input_frame.pack(fill=tk.X, pady=10)
-        # Initially hide input_frame
+        # --- Optional input frame to avoid AttributeError ---
+        self.input_frame = tk.Frame(root)
         self.input_frame.pack_forget()
 
-        # --- Display Frame: Treeview Table ---
+        # --- Display Frame (fixed height) ---
         self.display_frame = tk.Frame(root, relief=tk.SUNKEN, bd=2)
         self.display_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+        # Fix height so footer never disappears
+        self.display_frame.pack_propagate(False)
+        self.display_frame.config(height=500)
+
+        # Treeview inside display frame
         self.tree = ttk.Treeview(self.display_frame)
         self.tree.pack(fill=tk.BOTH, expand=True)
         self.scrollbar = ttk.Scrollbar(self.display_frame, orient="vertical", command=self.tree.yview)
@@ -117,6 +122,8 @@ class KoiLedgerDashboard:
         footer_frame.pack(side=tk.BOTTOM, fill=tk.X)
         self.close_btn = tk.Button(footer_frame, text="Close Koi", command=self.close_koi)
         self.close_btn.pack(pady=5)
+
+
 
     # -------------------------------
     # DB Helpers
@@ -503,6 +510,9 @@ class KoiLedgerDashboard:
         elif action == "Certificates":
             self.show_certificates()
 
+        elif action == "Owners":
+            OwnerManager(self.root)
+
 
 
 
@@ -512,56 +522,234 @@ class KoiLedgerDashboard:
     # TRANSFER KOI
     # -------------------------------
     def transfer_koi(self):
-
         if not self.current_koi_id:
             messagebox.showerror("Error", "No Koi selected")
             return
 
-        if self.transfer_window and tk.Toplevel.winfo_exists(self.transfer_window):
-            self.transfer_window.lift()
+        koi = self.current_koi
+
+        # Load current owner
+        current_owner = self.fetch_one("""
+            SELECT org_id, org_name, xrpl_wallet, country
+            FROM organizations
+            WHERE org_id=%s
+        """, (koi["current_owner_id"],))
+
+        if not current_owner:
+            messagebox.showerror("Error", "Current owner information missing")
             return
 
-        self.transfer_window = tk.Toplevel(self.root)
-        self.transfer_window.title("Transfer Ownership")
-        self.transfer_window.geometry("400x250")
+        win = tk.Toplevel(self.root)
+        win.title("Professional Koi Transfer")
+        self.center_popup(win, 600, 550)
 
-        tk.Label(self.transfer_window, text="New Owner Org ID").pack(pady=5)
-        owner_entry = tk.Entry(self.transfer_window)
-        owner_entry.pack()
+        # --- Current Owner Info ---
+        tk.Label(win, text="CURRENT OWNER DETAILS", font=("Arial", 12, "bold")).pack(pady=5)
+        tk.Label(win, text="Present Owner").pack()
+        cur_owner_entry = tk.Entry(win, width=50)
+        cur_owner_entry.insert(0, current_owner["org_name"])
+        cur_owner_entry.config(state="readonly")
+        cur_owner_entry.pack()
 
-        tk.Label(self.transfer_window, text="Price").pack(pady=5)
-        price_entry = tk.Entry(self.transfer_window)
-        price_entry.pack()
+        tk.Label(win, text="Present Owner Wallet").pack()
+        cur_wallet_entry = tk.Entry(win, width=50)
+        cur_wallet_entry.insert(0, current_owner["xrpl_wallet"] or "NOT CONFIGURED")
+        cur_wallet_entry.config(state="readonly")
+        cur_wallet_entry.pack()
 
+        tk.Label(win, text="Country").pack()
+        cur_country = tk.Entry(win, width=50)
+        cur_country.insert(0, current_owner["country"])
+        cur_country.config(state="readonly")
+        cur_country.pack(pady=10)
+
+        # --- Select New Owner ---
+        tk.Label(win, text="SELECT NEW OWNER", font=("Arial", 12, "bold")).pack(pady=5)
+        owners = self.get_all_owners()
+        owner_map = {f"{o['org_name']} (ID:{o['org_id']})": o for o in owners}
+        owner_var = tk.StringVar()
+        owner_combo = ttk.Combobox(win, textvariable=owner_var, values=list(owner_map.keys()), width=60)
+        owner_combo.pack(pady=5)
+
+        tk.Label(win, text="New Owner XRPL Wallet").pack()
+        wallet_entry = tk.Entry(win, width=50)
+        wallet_entry.pack()
+
+        tk.Label(win, text="Buyer XRPL Secret (Demo)").pack()
+        secret_entry = tk.Entry(win, width=50, show="*")
+        secret_entry.pack()
+
+        # --- Price Section ---
+        tk.Label(win, text="Price in JPY").pack()
+        jpy_entry = tk.Entry(win, width=20)
+        jpy_entry.pack()
+
+        tk.Label(win, text="Converted XRP").pack()
+        xrp_entry = tk.Entry(win, width=20)
+        xrp_entry.pack()
+
+        def convert_to_xrp():
+            try:
+                jpy = float(jpy_entry.get())
+                rate = 0.0028  # conversion rate demo
+                xrp = round(jpy * rate, 2)
+                xrp_entry.delete(0, tk.END)
+                xrp_entry.insert(0, str(xrp))
+            except:
+                messagebox.showerror("Error", "Enter valid JPY amount")
+
+        tk.Button(win, text="Convert JPY → XRP", command=convert_to_xrp).pack(pady=5)
+
+        tk.Label(win, text="Transfer Reason").pack()
+        reason_var = tk.StringVar()
+        reason_combo = ttk.Combobox(
+            win, textvariable=reason_var,
+            values=["SALE", "GIFT", "AUCTION", "BREEDING LOAN"],
+            state="readonly", width=40
+        )
+        reason_combo.pack(pady=5)
+
+        # --- Owner select event ---
+        def owner_selected(event):
+            sel = owner_var.get()
+            if sel in owner_map:
+                wallet_entry.delete(0, tk.END)
+                wallet_entry.insert(0, owner_map[sel]["xrpl_wallet"] or "")
+                buyer_secret = owner_map[sel].get("xrpl_secret", "")
+                secret_entry.delete(0, tk.END)
+                secret_entry.insert(0, buyer_secret)
+                messagebox.showinfo("Demo Only", f"Buyer secret: {buyer_secret}")
+
+        owner_combo.bind("<<ComboboxSelected>>", owner_selected)
+
+        # --- Execute Transfer ---
         def do_transfer():
-            new_owner = owner_entry.get()
-            price = price_entry.get()
-
-            if not new_owner:
-                messagebox.showerror("Error", "Owner ID required")
+            sel = owner_var.get()
+            if not sel:
+                messagebox.showerror("Error", "Please select new owner (Buyer)")
                 return
 
+            buyer = owner_map[sel]
+            buyer_org_id = buyer["org_id"]
+            buyer_wallet = wallet_entry.get()
+            buyer_secret = secret_entry.get()
+            seller_wallet = current_owner["xrpl_wallet"]
+
+            if buyer_org_id == current_owner["org_id"]:
+                messagebox.showerror("Error", "Buyer cannot be same as current owner")
+                return
+            if not buyer_wallet:
+                messagebox.showerror("Error", "Buyer has no XRPL wallet configured")
+                return
+            if not buyer_secret:
+                messagebox.showerror("Error", "Enter Buyer XRPL secret (for demo)")
+                return
+            if not seller_wallet:
+                messagebox.showerror("Error", "Seller has no XRPL wallet configured")
+                return
+
+            try:
+                jpy = float(jpy_entry.get())
+                xrp = float(xrp_entry.get())
+            except:
+                messagebox.showerror("Error", "Enter valid JPY and XRP amounts")
+                return
+
+            reason = reason_var.get() or "SALE"
+
+            confirm = messagebox.askyesno(
+                "Confirm Transfer",
+                f"Transfer Koi ID {self.current_koi_id}\n\n"
+                f"Buyer: {buyer['org_name']}\n"
+                f"Seller: {current_owner['org_name']}\n\n"
+                f"JPY: {jpy}\nXRP: {xrp}\n\nProceed with payment?"
+            )
+            if not confirm:
+                return
+
+            from datetime import datetime
+            memo = f"KOI|TRANSFER|KOI_ID:{self.current_koi_id}|BUYER:{buyer_org_id}|SELLER:{current_owner['org_id']}|JPY:{jpy}|XRP:{xrp}|REASON:{reason}|DATE:{datetime.now().date()}"
+
+            # --- Send XRP ---
+            try:
+                from xrpl_utils import send_xrp
+                tx_hash = send_xrp(
+                    from_secret=buyer_secret,
+                    to_address=seller_wallet,
+                    amount_xrp=xrp,
+                    memo_text=memo
+                )
+            except Exception as e:
+                messagebox.showerror("XRPL Error", str(e))
+                return
+
+            # --- Update Koi Owner ---
             execute(
                 "UPDATE koi SET current_owner_id=%s WHERE koi_id=%s",
-                (new_owner, self.current_koi_id)
+                (buyer_org_id, self.current_koi_id)
             )
 
-            execute(
-                "INSERT INTO ownership_history(koi_id, to_org_id, price, transfer_date) VALUES(%s,%s,%s,NOW())",
-                (self.current_koi_id, new_owner, price)
-            )
+            # --- Insert Ownership History ---
+            execute("""
+                INSERT INTO ownership_history
+                (koi_id, from_org_id, to_org_id, transfer_type, transfer_date, price, xrpl_tx)
+                VALUES (%s,%s,%s,%s,NOW(),%s,%s)
+            """, (
+                self.current_koi_id,
+                current_owner["org_id"],
+                buyer_org_id,
+                reason,
+                jpy,
+                tx_hash
+            ))
 
-            messagebox.showinfo("Success", "Ownership transferred")
-            self.transfer_window.destroy()
-            self.transfer_window = None
+            # --- Insert XRPL Transaction ---
+            execute("""
+                INSERT INTO xrpl_transactions
+                (koi_id, event_type, xrpl_hash, memo)
+                VALUES (%s,'TRANSFER',%s,%s)
+            """, (
+                self.current_koi_id,
+                tx_hash,
+                memo
+            ))
 
-        tk.Button(self.transfer_window, text="Transfer", command=do_transfer).pack(pady=10)
+            messagebox.showinfo("SUCCESS", f"Transfer Completed!\n\nXRPL TX:\n{tx_hash}")
+            win.destroy()
+            self.search_koi()
 
-        tk.Button(
-            self.transfer_window,
-            text="Cancel",
-            command=lambda: [self.transfer_window.destroy(), setattr(self, "transfer_window", None)]
-        ).pack()
+        tk.Button(win, text="CONFIRM TRANSFER", command=do_transfer).pack(pady=15)
+        tk.Button(win, text="Cancel", command=win.destroy).pack()
+
+
+
+
+    def record_koi_transfer(koi_id, from_org, to_org, price_xrp):
+
+        memo = f"KOI|TRANSFER|{koi_id}|From {from_org} to {to_org}|{datetime.now().date()}"
+
+        tx = send_xrp(
+            from_secret=BUYER_SECRET,
+            to_address=SELLER_ADDRESS,
+            amount_xrp=price_xrp,
+            memo_text=memo
+        )
+
+        execute("""
+          INSERT INTO xrpl_transactions
+          (koi_id, event_type, xrpl_hash, memo)
+          VALUES (%s,'TRANSFER',%s,%s)
+        """, (koi_id, tx, memo))
+
+        execute("""
+          INSERT INTO ownership_history
+          (koi_id, from_org_id, to_org_id, transfer_date, xrpl_tx)
+          VALUES (%s,%s,%s,CURDATE(),%s)
+        """, (koi_id, from_org, to_org, tx))
+
+
+
+        
 
     def show_ownership_history(self):
         win = tk.Toplevel(self.root)
@@ -602,84 +790,272 @@ class KoiLedgerDashboard:
 
 
     def show_health_records(self):
+        # Clear display area first
         self.clear_display()
-        self.display_koi(self.current_koi)   # redraw Koi info
+        self.display_koi(self.current_koi)
 
         title = tk.Label(self.display_frame, text="Health Records", font=("Arial", 14, "bold"))
         title.pack(pady=5)
 
+        # ---- Child Frame Container ----
+        container = tk.Frame(self.display_frame)
+        container.pack(fill="both", expand=True, padx=10, pady=5)
+
+        # ---- Scrollable Canvas ----
+        canvas = tk.Canvas(container, height=300)
+        scrollbar = tk.Scrollbar(container, orient="vertical", command=canvas.yview)
+        scroll_frame = tk.Frame(canvas)
+
+        scroll_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # ---- Header Row ----
+        headers = ["Date", "Size (cm)", "Weight (kg)", "Vet", "Treatment", "Notes", "Date Created"]
+        for col, h in enumerate(headers):
+            tk.Label(
+                scroll_frame,
+                text=h,
+                font=("Arial", 10, "bold"),
+                borderwidth=1,
+                relief="solid",
+                width=18
+            ).grid(row=0, column=col, sticky="nsew")
+
+        # ---- Fetch Records ----
         records = self.fetch_all(
-            "SELECT record_date, size_cm, weight, vet_name, treatment, notes "
-            "FROM koi_health_records WHERE koi_id=%s ORDER BY record_date DESC",
+            """
+            SELECT record_date, size_cm, weight, vet_name, treatment, notes, date_created
+            FROM koi_health_records
+            WHERE koi_id=%s
+            ORDER BY record_date DESC
+            """,
             (self.current_koi_id,)
         )
 
-        for r in records:
-            text = f"Date: {r['record_date']} | Size: {r['size_cm']} cm | Weight: {r['weight']} kg\n"
-            text += f"Vet: {r['vet_name']} | Treatment: {r['treatment']}\nNotes: {r['notes']}\n"
-            lbl = tk.Label(self.display_frame, text=text, justify="left", anchor="w")
-            lbl.pack(fill="x", padx=10, pady=5)
+        # ---- Data Rows ----
+        for row_index, r in enumerate(records, start=1):
+            values = [
+                r["record_date"],
+                r["size_cm"],
+                r["weight"],
+                r["vet_name"],
+                r["treatment"],
+                r["notes"],
+                r["date_created"]
+            ]
+            for col, val in enumerate(values):
+                tk.Label(
+                    scroll_frame,
+                    text=str(val),
+                    borderwidth=1,
+                    relief="solid",
+                    width=18,
+                    anchor="w"
+                ).grid(row=row_index, column=col, sticky="nsew")
 
-        add_btn = tk.Button(
-            self.display_frame,
+        # ---- Add Health Record Button (child of container, not display_frame) ----
+        tk.Button(
+            container,
             text="Add Health Record",
-            command=self.add_health_record_popup
+            command=self.add_health_record_popup,
+            width=20,
+            height=2  # ensures proper height
+        ).pack(pady=10)
+
+
+
+    def save_health_record(koi_id, size, weight, notes):
+
+        memo = f"KOI|HEALTH|{koi_id}|Size:{size} Weight:{weight}|{datetime.now().date()}"
+
+        tx = send_xrp(
+            from_secret=BUYER_SECRET,
+            to_address=SELLER_ADDRESS,
+            amount_xrp=0,
+            memo_text=memo
         )
-        add_btn.pack(pady=10)
+
+        execute("""
+          INSERT INTO koi_health_records
+          (koi_id, record_date, size_cm, weight, notes, xrpl_tx)
+          VALUES (%s, CURDATE(), %s, %s, %s, %s)
+        """, (koi_id, size, weight, notes, tx))
+
+
 
 
     def show_pedigree(self):
         self.clear_display()
-        self.display_koi(self.current_koi)   # redraw Koi info
+        self.display_koi(self.current_koi)
 
-        title = tk.Label(self.display_frame, text="Pedigree", font=("Arial", 14, "bold"))
+        title = tk.Label(self.display_frame, text="Pedigree Records", font=("Arial", 14, "bold"))
         title.pack(pady=5)
 
-        p = self.fetch_one(
-            "SELECT father_koi_code, mother_koi_code, bloodline, breeder "
-            "FROM koi_pedigree WHERE koi_id=%s",
+        # ---- Container ----
+        container = tk.Frame(self.display_frame)
+        container.pack(fill="both", expand=True, padx=10, pady=5)
+
+        canvas = tk.Canvas(container, height=250)
+        scrollbar = tk.Scrollbar(container, orient="vertical", command=canvas.yview)
+        scroll_frame = tk.Frame(canvas)
+
+        scroll_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # ---- Header Row ----
+        headers = ["Status", "Father", "Mother", "Bloodline", "Breeder", "date_created"]
+
+        for col, h in enumerate(headers):
+            tk.Label(
+                scroll_frame,
+                text=h,
+                font=("Arial", 10, "bold"),
+                borderwidth=1,
+                relief="solid",
+                width=20
+            ).grid(row=0, column=col, sticky="nsew")
+
+        # ---- Fetch Records (Latest First) ----
+        records = self.fetch_all(
+            """
+            SELECT pedigree_id, father_koi_code, mother_koi_code, bloodline, breeder, date_created
+            FROM koi_pedigree
+            WHERE koi_id=%s
+            ORDER BY pedigree_id DESC
+            """,
             (self.current_koi_id,)
         )
 
-        if p:
-            text = f"""
-    Father Code: {p['father_koi_code']}
-    Mother Code: {p['mother_koi_code']}
-    Bloodline: {p['bloodline']}
-    Breeder: {p['breeder']}
-    """
-            tk.Label(self.display_frame, text=text, justify="left").pack(pady=10)
-        else:
-            tk.Label(self.display_frame, text="No pedigree record found").pack()
+        # ---- Display Rows ----
+        for row_index, r in enumerate(records, start=1):
 
+            # First record = latest
+            status = "CURRENT" if row_index == 1 else "OLD"
+
+            values = [
+                status,
+                r["father_koi_code"],
+                r["mother_koi_code"],
+                r["bloodline"] if r["bloodline"] else "-",
+                r["breeder"] if r["breeder"] else "-",
+                r["date_created"] if r["date_created"] else "-"
+            ]
+
+            for col, val in enumerate(values):
+                tk.Label(
+                    scroll_frame,
+                    text=str(val),
+                    borderwidth=1,
+                    relief="solid",
+                    width=20,
+                    anchor="w"
+                ).grid(row=row_index, column=col, sticky="nsew")
+
+        # ---- Add Health Record Button (child of container, not display_frame) ----
         tk.Button(
-            self.display_frame,
+            container,
             text="Add / Update Pedigree",
-            command=self.add_pedigree_popup
+            command=self.add_pedigree_popup,
+            width=20,
+            height=2  # ensures proper height
         ).pack(pady=10)
 
 
     def show_certificates(self):
         self.clear_display()
-        self.display_koi(self.current_koi)   # redraw Koi info
+        self.display_koi(self.current_koi)
 
         title = tk.Label(self.display_frame, text="Certificates", font=("Arial", 14, "bold"))
         title.pack(pady=5)
 
+        container = tk.Frame(self.display_frame)
+        container.pack(fill="both", expand=True, padx=10, pady=5)
+
+        canvas = tk.Canvas(container, height=250)
+        scrollbar = tk.Scrollbar(container, orient="vertical", command=canvas.yview)
+        scroll_frame = tk.Frame(canvas)
+
+        scroll_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # ---- Header ----
+        headers = ["Type", "Issued By", "Issue Date", "Document Path", "XRPL TX", "Date Created"]
+
+        for col, h in enumerate(headers):
+            tk.Label(
+                scroll_frame,
+                text=h,
+                font=("Arial", 10, "bold"),
+                borderwidth=1,
+                relief="solid",
+                width=18
+            ).grid(row=0, column=col, sticky="nsew")
+
+        # ---- Fetch Records (Latest First) ----
         records = self.fetch_all(
-            "SELECT certificate_type, issued_by, issue_date, document_path "
-            "FROM certificates WHERE koi_id=%s",
+            """
+            SELECT certificate_type, issued_by, issue_date, document_path, xrpl_tx, date_created
+            FROM certificates
+            WHERE koi_id=%s
+            ORDER BY certificate_id DESC
+            """,
             (self.current_koi_id,)
         )
 
-        for r in records:
-            text = f"Type: {r['certificate_type']} | Issued By: {r['issued_by']} | Date: {r['issue_date']}"
-            tk.Label(self.display_frame, text=text, anchor="w").pack(fill="x", padx=10)
+        # ---- Display Rows ----
+        for row_index, r in enumerate(records, start=1):
 
+            values = [
+                r["certificate_type"],
+                r["issued_by"],
+                r["issue_date"],
+                r["document_path"],
+                r["xrpl_tx"] if r["xrpl_tx"] else "-",
+                r["date_created"]
+            ]
+
+            for col, val in enumerate(values):
+                tk.Label(
+                    scroll_frame,
+                    text=str(val),
+                    borderwidth=1,
+                    relief="solid",
+                    width=18,
+                    anchor="w"
+                ).grid(row=row_index, column=col, sticky="nsew")
+
+
+        # ---- Add Health Record Button (child of container, not display_frame) ----
         tk.Button(
-            self.display_frame,
+            container,
             text="Add Certificate",
-            command=self.add_certificate_popup
+            command=self.add_certificate_popup,
+            width=20,
+            height=2  # ensures proper height
         ).pack(pady=10)
 
 
@@ -730,8 +1106,8 @@ class KoiLedgerDashboard:
 
     def add_pedigree_popup(self):
         win = tk.Toplevel(self.root)
-        win.title("Add Pedigree")
-        self.open_popups.append(win)  # <--- track it
+        win.title("Add Pedigree Record")
+        self.open_popups.append(win)
         self.center_popup(win, width=600, height=400)
 
         fields = {}
@@ -743,7 +1119,9 @@ class KoiLedgerDashboard:
             fields[label] = e
 
         def save():
-            self.execute("DELETE FROM koi_pedigree WHERE koi_id=%s", (self.current_koi_id,))
+
+            # ✅ DO NOT DELETE OLD RECORDS
+            # ✅ Always INSERT new record
 
             self.execute(
                 """
@@ -760,8 +1138,10 @@ class KoiLedgerDashboard:
                 )
             )
 
-            self.log_xrpl("PEDIGREE", "Updated pedigree")
-            messagebox.showinfo("Success", "Pedigree saved!")
+            # Optional XRPL log (do NOT say "Updated")
+            self.log_xrpl("PEDIGREE", "Added new pedigree record")
+
+            messagebox.showinfo("Success", "Pedigree record added!")
             win.destroy()
             self.show_pedigree()
 
@@ -823,8 +1203,17 @@ class KoiLedgerDashboard:
         tk.Button(win, text="Cancel", command=win.destroy).pack()
 
 
+    def get_all_owners(self):
+        return self.fetch_all(
+            "SELECT org_id, org_name, xrpl_wallet, xrpl_secret FROM organizations ORDER BY org_name",
+            ()
+        )
 
 
+    def is_valid_xrpl(self, address):
+        import re
+        pattern = r"^r[1-9A-HJ-NP-Za-km-z]{24,34}$"
+        return bool(re.match(pattern, address))
 
 
     def log_xrpl(self, event_type, memo):

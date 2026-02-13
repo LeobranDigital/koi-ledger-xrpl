@@ -118,6 +118,9 @@ def format_mrz_line2(koi):
 # ------------------------
 # Passport Rendering
 # ------------------------
+# ------------------------
+# Passport Rendering
+# ------------------------
 def render_passport(frame, koi):
     for w in frame.winfo_children():
         w.destroy()
@@ -146,11 +149,8 @@ def render_passport(frame, koi):
     canvas.create_text(360, 75, text="JAPAN", font=("Arial", 11, "bold"), anchor="w")
 
     canvas.create_text(520, 50, text="旅券番号 / Passport No", font=("Arial", 9), anchor="w")
-    canvas.create_text(520, 75, text=f"K-{koi.get('koi_id')}", font=("Arial", 11, "bold"), anchor="w")
-
-
-    # ---- PHOTO LEFT ----
-
+    # UPDATED: standard_koi_id
+    canvas.create_text(520, 75, text=koi.get("standard_koi_id"), font=("Arial", 11, "bold"), anchor="w")
 
     # ---- PHOTO LEFT ----
     photo_x1, photo_y1 = 40, 90
@@ -159,7 +159,6 @@ def render_passport(frame, koi):
 
     # Determine photo path
     photo_path = None
-
     try:
         conn = get_connection()
         cur = conn.cursor(dictionary=True)
@@ -193,26 +192,66 @@ def render_passport(frame, koi):
 
     canvas.create_text((photo_x1 + photo_x2)//2, photo_y2 + 15, text="画像 / FISH PHOTO", font=("Arial", 9))
 
+    # ----------------------------------------
+    # Fetch Owner Name and Farm Name
+    # ----------------------------------------
+    owner_name = "Unknown"
+    farm_name = "Unknown"
+    try:
+        conn = get_connection()
+        cur = conn.cursor(dictionary=True)
+
+        # Current Owner Name
+        cur.execute("""
+            SELECT org_name 
+            FROM organizations 
+            WHERE org_id=%s
+        """, (koi.get("current_owner_id"),))
+        owner_row = cur.fetchone()
+        if owner_row:
+            owner_name = owner_row["org_name"]
+
+        # Farm Name (Registered Organization)
+        cur.execute("""
+            SELECT org_name 
+            FROM organizations 
+            WHERE org_id=%s
+        """, (koi.get("org_id"),))
+        farm_row = cur.fetchone()
+        if farm_row:
+            farm_name = farm_row["org_name"]
+
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print("Error fetching organization names:", e)
 
     # ---- QR TOP RIGHT (Transparent BG) ----
+    # ---- QR TOP RIGHT (Transparent BG) ----
     try:
-        qr = generate_qr(koi).convert("RGBA")
+        passport_no = f"K-{koi.get('koi_id')}"  # Passport No
+        koi_for_qr = koi.copy()
+        koi_for_qr["passport_no"] = passport_no
+        qr = generate_qr(koi_for_qr).convert("RGBA")
         qr = qr.resize((80, 80))
         qr_img = ImageTk.PhotoImage(qr)
         canvas.qr = qr_img
         canvas.create_image(780, 80, image=qr_img)
-    except:
+    except Exception as e:
+        print("QR generation error:", e)
         canvas.create_text(780, 80, text="QR ERROR")
 
     # ---- BARCODE BELOW QR (Transparent BG) ----
     try:
-        barcode = generate_barcode(koi.get("koi_id")).convert("RGBA")
+        barcode = generate_barcode(koi_for_qr).convert("RGBA")
         barcode = barcode.resize((120, 40))
         bc_img = ImageTk.PhotoImage(barcode)
         canvas.bc = bc_img
         canvas.create_image(780, 150, image=bc_img)
-    except:
+    except Exception as e:
+        print("Barcode generation error:", e)
         canvas.create_text(780, 150, text="BARCODE ERROR")
+
 
     # ---- INFORMATION AREA ----
     x = 280
@@ -225,7 +264,17 @@ def render_passport(frame, koi):
         canvas.create_text(x, y + 18, text=str(value), anchor="w", font=("Arial", 12, "bold"))
         y += gap
 
-    draw("姓", "Surname", koi.get("breeder_name"))
+    # Breeder Name (Left)
+    canvas.create_text(x, y, text="ブリーダー名 / Breeder Name", anchor="w", font=("Arial", 9))
+    canvas.create_text(x, y + 18, text=koi.get("breeder_name"), anchor="w", font=("Arial", 12, "bold"))
+
+    # Current Owner (Right - same row)
+    canvas.create_text(x + 240, y, text="現在の所有者 / Current Owner", anchor="w", font=("Arial", 9))
+    canvas.create_text(x + 240, y + 18, text=owner_name, anchor="w", font=("Arial", 12, "bold"))
+
+    y += gap
+
+    # Given Name (Next Row)
     draw("名", "Given Name", koi.get("name"))
 
     canvas.create_text(x, y, text="国籍 / Nationality", anchor="w", font=("Arial", 9))
@@ -239,8 +288,9 @@ def render_passport(frame, koi):
     canvas.create_text(x, y, text="性別 / Sex", anchor="w", font=("Arial", 9))
     canvas.create_text(x, y + 18, text=koi.get("gender"), anchor="w", font=("Arial", 12, "bold"))
 
-    canvas.create_text(x + 240, y, text="登録地 / Registered Domicile", anchor="w", font=("Arial", 9))
-    canvas.create_text(x + 240, y + 18, text=koi.get("current_owner_id"), anchor="w", font=("Arial", 12, "bold"))
+    # Farm Name (Registered Organization)
+    canvas.create_text(x + 240, y, text="登録養殖場 / Farm Name", anchor="w", font=("Arial", 9))
+    canvas.create_text(x + 240, y + 18, text=farm_name, anchor="w", font=("Arial", 12, "bold"))
 
     y += gap
 
@@ -254,9 +304,6 @@ def render_passport(frame, koi):
     draw("発行機関", "Authority", "KOI LEDGER REGISTRY")
 
     # ---- MRZ (MVR) AT BOTTOM – FULL WIDTH ----
-    # mrz1 = f"KP<JPN<<{koi.get('variety','').upper()}<<{koi.get('name','').upper()}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
-    # mrz2 = f"{koi.get('koi_id')}JPN{str(koi.get('birth_date')).replace('-','')}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
-    
     mrz1 = format_mrz_line1(koi)
     mrz2 = format_mrz_line2(koi)
 
@@ -278,7 +325,6 @@ def render_passport(frame, koi):
         img.save(img_path)
 
         c = pdfcanvas.Canvas(pdf_file, pagesize=letter)
-        # Resize to fit page width
         page_width, page_height = letter
         c.drawImage(img_path, 50, 300, width=page_width-100, preserveAspectRatio=True, mask='auto')
         c.save()
@@ -290,6 +336,182 @@ def render_passport(frame, koi):
         img.save(save_path)
         tk.messagebox.showinfo("Share", f"Passport saved as {save_path}.\nYou can now share it.")
 
+    def update_koi_popup():
+        from tkinter import filedialog, messagebox
+        import shutil
+        import os
+        from datetime import datetime
+        import cv2
+
+        win = tk.Toplevel(frame)
+        win.title("Update Koi Photo")
+        win.geometry("540x650")
+
+        win.transient(frame)
+        win.grab_set()
+        win.lift()
+        win.focus_force()
+        win.attributes("-topmost", True)
+        win.after(200, lambda: win.attributes("-topmost", False))
+
+        selected_image_path = {"path": None}
+        camera_running = {"status": False}
+        cap = {"obj": None}
+        current_frame = {"img": None}
+
+        # Current Photo Section
+        tk.Label(win, text="Current Photo", font=("Arial", 12, "bold")).pack(pady=5)
+        current_canvas = tk.Canvas(win, width=300, height=220, bd=2, relief="sunken")
+        current_canvas.pack()
+
+        photo_path = None
+        try:
+            conn = get_connection()
+            cur = conn.cursor(dictionary=True)
+            cur.execute("""
+                SELECT photo_path 
+                FROM koi_photos 
+                WHERE koi_id=%s 
+                ORDER BY main_photo DESC, record_date DESC 
+                LIMIT 1
+            """, (koi.get("koi_id"),))
+            row = cur.fetchone()
+            if row:
+                photo_path = row["photo_path"]
+            cur.close()
+            conn.close()
+        except:
+            pass
+
+        if photo_path and os.path.exists(photo_path):
+            img = Image.open(photo_path).resize((300, 220))
+            img_tk = ImageTk.PhotoImage(img)
+            current_canvas.create_image(0, 0, anchor="nw", image=img_tk)
+            current_canvas.image = img_tk
+        else:
+            current_canvas.create_text(150, 110, text="No Photo Available")
+
+        # Preview Section
+        tk.Label(win, text="New Photo Preview", font=("Arial", 12, "bold")).pack(pady=10)
+        preview_canvas = tk.Canvas(win, width=300, height=220, bd=2, relief="sunken")
+        preview_canvas.pack()
+
+        def show_preview(path):
+            img = Image.open(path).resize((300, 220))
+            img_tk = ImageTk.PhotoImage(img)
+            preview_canvas.create_image(0, 0, anchor="nw", image=img_tk)
+            preview_canvas.image = img_tk
+            selected_image_path["path"] = path
+
+        # Browse File
+        def browse_file():
+            f = filedialog.askopenfilename(
+                title="Select Koi Photo",
+                filetypes=[("Image Files", "*.png;*.jpg;*.jpeg")]
+            )
+            if f:
+                stop_camera()
+                show_preview(f)
+
+        tk.Button(win, text="Browse File", width=20, command=browse_file).pack(pady=5)
+
+        # Camera Section
+        def start_camera():
+            if camera_running["status"]:
+                return
+            cap["obj"] = cv2.VideoCapture(0)
+            if not cap["obj"].isOpened():
+                messagebox.showerror("Camera Error", "Unable to access camera.")
+                return
+            camera_running["status"] = True
+            update_camera_frame()
+
+        def update_camera_frame():
+            if not camera_running["status"]:
+                return
+            ret, frame_cv = cap["obj"].read()
+            if ret:
+                current_frame["img"] = frame_cv
+                frame_rgb = cv2.cvtColor(frame_cv, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(frame_rgb)
+                img = img.resize((300, 220))
+                img_tk = ImageTk.PhotoImage(img)
+                preview_canvas.create_image(0, 0, anchor="nw", image=img_tk)
+                preview_canvas.image = img_tk
+            win.after(20, update_camera_frame)
+
+        def capture_image():
+            if current_frame["img"] is None:
+                messagebox.showerror("Error", "No frame available.")
+                return
+            temp_path = "temp_capture.jpg"
+            cv2.imwrite(temp_path, current_frame["img"])
+            selected_image_path["path"] = temp_path
+            stop_camera()
+
+        def stop_camera():
+            camera_running["status"] = False
+            if cap["obj"]:
+                cap["obj"].release()
+
+        tk.Button(win, text="Start Camera", width=20, command=start_camera).pack(pady=3)
+        tk.Button(win, text="Capture Photo", width=20, command=capture_image).pack(pady=3)
+        tk.Button(win, text="Stop Camera", width=20, command=stop_camera).pack(pady=3)
+
+        # Save Photo
+        def save_photo():
+            path = selected_image_path["path"]
+            if not path:
+                messagebox.showerror("Error", "No photo selected.")
+                return
+
+            dest_dir = "koi_photos"
+            os.makedirs(dest_dir, exist_ok=True)
+
+            ext = os.path.splitext(path)[1]
+            dest_path = os.path.join(
+                dest_dir,
+                f"koi_{koi.get('koi_id')}_{int(datetime.now().timestamp())}{ext}"
+            )
+
+            shutil.copy(path, dest_path)
+
+            try:
+                conn = get_connection()
+                cur = conn.cursor()
+
+                # Remove previous main photo
+                cur.execute(
+                    "UPDATE koi_photos SET main_photo=0 WHERE koi_id=%s",
+                    (koi.get("koi_id"),)
+                )
+
+                # Insert new main photo
+                cur.execute("""
+                    INSERT INTO koi_photos (koi_id, photo_path, main_photo, record_date)
+                    VALUES (%s, %s, 1, NOW())
+                """, (koi.get("koi_id"), dest_path))
+
+                conn.commit()
+                cur.close()
+                conn.close()
+
+                stop_camera()
+                messagebox.showinfo("Success", "Photo updated successfully!")
+                win.destroy()
+                render_passport(frame, koi)
+
+            except Exception as e:
+                messagebox.showerror("Database Error", str(e))
+
+        tk.Button(win, text="Save Photo", width=22, bg="#4CAF50", fg="white", command=save_photo).pack(pady=15)
+        tk.Button(win, text="Cancel", width=22, command=lambda: [stop_camera(), win.destroy()]).pack(pady=5)
+
+    # Action Buttons
     tk.Button(btn_frame, text="Print Passport", command=print_passport).pack(side=tk.LEFT, padx=5)
     tk.Button(btn_frame, text="Save as PDF", command=save_pdf).pack(side=tk.LEFT, padx=5)
     tk.Button(btn_frame, text="Share Passport", command=share_passport).pack(side=tk.LEFT, padx=5)
+    tk.Button(btn_frame, text="Update Photo", command=update_koi_popup).pack(side=tk.LEFT, padx=5)
+
+
+
